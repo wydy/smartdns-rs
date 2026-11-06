@@ -31,3 +31,7 @@ dist
 
 # localhost.crt
 # localhost.key
+
+*.local.*
+
+.agent

@@ -281,17 +281,17 @@ pub fn serve(cfg: Arc<RuntimeConfig>) {
                     }
                 }
 
-                if !bg_batch.is_empty() {
-                    if let Ok(permit) = background_concurrency.clone().try_acquire_owned() {
-                        let mut batch = FuturesUnordered::new();
-                        std::mem::swap(&mut batch, &mut bg_batch);
-                        inner_join_set.spawn(async move {
-                            let count = batch.len();
-                            while (batch.next().await).is_some() {}
-                            drop(permit);
-                            count
-                        });
-                    }
+                if !bg_batch.is_empty()
+                    && let Ok(permit) = background_concurrency.clone().try_acquire_owned()
+                {
+                    let mut batch = FuturesUnordered::new();
+                    std::mem::swap(&mut batch, &mut bg_batch);
+                    inner_join_set.spawn(async move {
+                        let count = batch.len();
+                        while (batch.next().await).is_some() {}
+                        drop(permit);
+                        count
+                    });
                 }
 
                 if !batch.is_empty() {
@@ -507,13 +507,7 @@ fn build_middleware(
             builder = builder.with(Dns64Middleware::new(dns64_prefix));
         }
 
-        builder = builder.with(DnsZoneMiddleware::new());
-
         builder = builder.with(AddressMiddleware);
-
-        if cfg.resolv_hostanme() {
-            builder = builder.with(DnsHostsMiddleware::new());
-        }
 
         if cfg
             .dnsmasq_lease_file()
@@ -524,6 +518,12 @@ fn build_middleware(
                 cfg.dnsmasq_lease_file().unwrap(),
                 cfg.domain().cloned(),
             ));
+        }
+
+        builder = builder.with(DnsZoneMiddleware::new());
+
+        if cfg.resolv_hostanme() {
+            builder = builder.with(DnsHostsMiddleware::new());
         }
 
         // nftset

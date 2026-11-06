@@ -79,9 +79,7 @@ runs:
     - name: Install Wix Toolset
       if: ${{ inputs.install_wix == 'true' && runner.os == 'Windows' }}
       shell: pwsh
-      run: |
-       dotnet tool install --global wix
-       wix eula accept wix7
+      run: dotnet tool install --global wix
 
     - name: Install cargo-edit
       if: ${{ inputs.install_cargo_edit == 'true' }}
